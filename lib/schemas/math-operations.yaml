@@ -1,0 +1,45 @@
+openapi: 3.0.0
+info:
+  title: Math Operations API
+  version: 1.0.0
+  description: API for basic math operations
+servers:
+  - url: https://example.com
+paths:
+  /add:
+    post:
+      operationId: addNumbers
+      summary: Add numbers together
+      description: Adds an array of numbers and returns their sum
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                numbers:
+                  type: array
+                  items:
+                    type: number
+                  description: Array of numbers to add
+              required:
+                - numbers
+      responses:
+        '200':
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  sum:
+                    type: number
+                    description: The sum of all numbers
+components:
+  schemas:
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
