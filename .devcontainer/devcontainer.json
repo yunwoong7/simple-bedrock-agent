@@ -1,0 +1,57 @@
+{
+	"name": "Java & Typescript",
+	"image": "mcr.microsoft.com/devcontainers/base:bookworm",
+	"mounts": [
+        "source=${localEnv:HOME}/.aws,target=/home/vscode/.aws,type=bind"
+    ]
+
+	// 👇 Features to add to the Dev Container. More info: https://containers.dev/implementors/features.
+	"features": {
+		"ghcr.io/devcontainers/features/docker-in-docker:2": {
+			"moby": true,
+			"azureDnsAutoDetection": true,
+			"installDockerBuildx": true,
+			"installDockerComposeSwitch": true,
+			"version": "latest",
+			"dockerDashComposeVersion": "none"
+		},
+		"ghcr.io/prulloac/devcontainer-features/bun:1": {},
+		"ghcr.io/devcontainers/features/node:1": {
+			"nodeGypDependencies": true,
+			"installYarnUsingApt": true,
+			"version": "18",
+			"pnpmVersion": "8.8.0",
+			"nvmVersion": "latest"
+		},
+		"ghcr.io/devcontainers/features/common-utils:2": {
+			"installZsh": true,
+			"installOhMyZsh": true,
+			"installOhMyZshConfig": true,
+			"upgradePackages": true,
+			"username": "devcontainer",
+			"userUid": "automatic",
+			"userGid": "automatic"
+		},
+		"ghcr.io/devcontainers/features/python:1": {
+			"installTools": true,
+			"version": "3.12"
+		},
+		"ghcr.io/devcontainers-contrib/features/poetry:2": {},
+		"ghcr.io/devcontainers/features/github-cli:1": {
+			"installDirectlyFromGitHubRelease": true,
+			"version": "latest"
+		},
+		"ghcr.io/devcontainers/features/aws-cli:1": {
+			"version": "latest"
+		}
+	}
+
+	// 👇 Use 'forwardPorts' to make a list of ports inside the container available locally.
+	// "forwardPorts": [],
+
+	// 👇 Configure tool-specific properties.
+	// "customizations": {},
+
+	// 👇 Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
+	// "remoteUser": "root"
+}
