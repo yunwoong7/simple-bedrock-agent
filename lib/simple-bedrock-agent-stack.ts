@@ -8,33 +8,48 @@ export class SimpleBedrockAgentStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
     super(scope, id, props);
 
-    // Create Lambda function for addition
+    // Add Function Lambda
     const addFunction = new lambda.Function(this, 'AddFunction', {
       runtime: lambda.Runtime.PYTHON_3_12,
       handler: 'index.lambda_handler',
       code: lambda.Code.fromAsset(path.join(__dirname, '../lambda/add-numbers')),
     });
 
-    // Create Bedrock Agent
-    const agent = new bedrock.Agent(this, 'SimpleAgent', {
-      name: 'simple-agent',
-      foundationModel: bedrock.BedrockFoundationModel.ANTHROPIC_CLAUDE_3_5_HAIKU_V1_0,
-      instruction: `You are a helpful assistant that performs mathematical calculations using provided actions.
-        For ANY mathematical addition, you MUST use the add action from the math-operations action group.
-        NEVER calculate numbers directly - always use the add action.
-        When users ask for addition or use plus/더하기, you must:
-        1. Extract the numbers
-        2. Use the add action with these numbers
-        3. Return the result from the action`,
-      description: "A simple Bedrock agent for demonstration",
-      enableUserInput: true,
-      shouldPrepareAgent: true,
-      aliasName: "latest",
+    // requests Layer 생성
+    const requestsLayer = new lambda.LayerVersion(this, 'RequestsLayer', {
+      code: lambda.Code.fromAsset('lambda-layer/requests'),
+      compatibleRuntimes: [lambda.Runtime.PYTHON_3_12],
+      description: 'Requests module layer',
     });
 
-    const actionGroup = new bedrock.AgentActionGroup(this, "AdditionActionGroup", {
+    // Search Function Lambda with Layer
+    const searchFunction = new lambda.Function(this, 'SearchFunction', {
+      runtime: lambda.Runtime.PYTHON_3_12,
+      handler: 'index.lambda_handler',
+      code: lambda.Code.fromAsset(path.join(__dirname, '../lambda/brave-search')),
+      layers: [requestsLayer],  // Layer 추가
+      environment: {
+        BRAVE_API_KEY: process.env.BRAVE_API_KEY || ''
+      }
+    });
+
+    // Create Bedrock Agent
+    const agent = new bedrock.Agent(this, 'SimpleAgent', {
+      foundationModel: bedrock.BedrockFoundationModel.ANTHROPIC_CLAUDE_3_5_HAIKU_V1_0,
+      instruction: `You are a helpful assistant that can perform mathematical calculations and web searches.
+        For ANY mathematical addition, use the add action from the math-operations action group.
+        For web searches, use the search action from the search-operations action group.
+        NEVER calculate numbers directly - always use the add action.
+        When users ask for search or "검색", use the search action to find information.`,
+      description: "A simple Bedrock agent for demonstration",
+      enableUserInput: true,
+      aliasName: "latest"  // 이것이 자동으로 새 버전을 생성하고 alias를 업데이트합니다
+    });
+
+    // Math Operations Action Group
+    const mathActionGroup = new bedrock.AgentActionGroup(this, "MathActionGroup", {
       actionGroupName: "math-operations",
-      description: "Mathematical operations - must be used for ALL calculations. Direct calculation is not allowed.",
+      description: "Mathematical operations like addition",
       actionGroupExecutor: {
         lambda: addFunction
       },
@@ -42,13 +57,27 @@ export class SimpleBedrockAgentStack extends cdk.Stack {
       apiSchema: bedrock.ApiSchema.fromAsset(path.join(__dirname, 'schemas/math-operations.yaml'))
     });
 
-    agent.addActionGroup(actionGroup);
+    // Search Operations Action Group
+    const searchActionGroup = new bedrock.AgentActionGroup(this, "SearchActionGroup", {
+      actionGroupName: "search-operations",
+      description: "Web search operations using Brave Search",
+      actionGroupExecutor: {
+        lambda: searchFunction
+      },
+      actionGroupState: "ENABLED",
+      apiSchema: bedrock.ApiSchema.fromAsset(path.join(__dirname, 'schemas/search-operations.yaml'))
+    });
 
-    // Output the Agent ID and Alias
+    // Add Action Groups to Agent
+    agent.addActionGroup(mathActionGroup);
+    agent.addActionGroup(searchActionGroup);
+
+    // Output the Agent ID and Alias ID
     new cdk.CfnOutput(this, 'AgentId', {
       value: agent.agentId,
       description: 'The ID of the Bedrock Agent'
     });
+
     new cdk.CfnOutput(this, 'AgentAliasId', {
       value: agent.aliasId ?? 'default-alias-id',
       description: 'The alias ID of the Bedrock Agent'
