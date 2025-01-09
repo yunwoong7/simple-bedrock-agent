@@ -43,7 +43,7 @@ export class SimpleBedrockAgentStack extends cdk.Stack {
         When users ask for search or "검색", use the search action to find information.`,
       description: "A simple Bedrock agent for demonstration",
       enableUserInput: true,
-      aliasName: "latest"  // 이것이 자동으로 새 버전을 생성하고 alias를 업데이트합니다
+      aliasName: "latest"
     });
 
     // Math Operations Action Group
